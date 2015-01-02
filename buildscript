@@ -1,0 +1,161 @@
+#!/bin/bash
+echo '             _____   _       ___             '
+echo '            |__ __| | |___  | _ |            '
+echo '              | |   |  _  | | __|            '
+echo '              |_|   |_| |_| |___|            '
+echo '         ____                                '
+echo '        |  __|   ____  ___  ___  ____        '
+echo '        |  | __ | ___|| _ || _ || __ |       '
+echo '        |  |_| || |   | __|| __|| || |       '
+echo '        |______||_|   |___||___||_||_|       '
+echo '  ________                                    '
+echo ' |        | ______  ____  _      _  ____  ___ '
+echo ' |  |  |  ||  _   ||  __|| |___ | || __ || __|'
+echo ' |  |  |  || |_|  || |__ |  _  || || || || __|'
+echo ' |__|__|__||____|_||____||_| |_||_||_||_||___|'
+echo
+echo '        Compile Script by YoshiShaPow        '
+
+# Tuneables
+buildname="TGM-falcon-lollipop-v1.0.0"
+defconfig="tgm_falcon_defconfig"
+jobs="6"
+toolchain="/home/yoshishapow/kernels/toolchains/cortex_a15/bin/arm-cortex_a15-linux-gnueabihf-"
+kerneltype="zImage"
+output="../out/falcon"
+ps=2048
+base=0x00000000
+ramdisk_offset=0x01000000
+tags_offset=0x00000100
+cmdline="console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x37 vmalloc=400M utags.blkdev=/dev/block/platform/msm_sdcc.1/by-name/utags androidboot.write_protect=0 zcache androidboot.selinux=permissive"
+
+# Let's startoneplus-one
+export ARCH=arm
+export SUBARCH=arm
+export CROSS_COMPILE=$toolchain
+
+echo
+
+while read -p "Do you want to make clean (y/n)? " cchoice
+do
+case "$cchoice" in
+	y|Y )
+		make clean && make mrproper
+		rm -rf ../out/falcon/files && mkdir ../out/falcon/files
+		rm -rf ozip/boot.img
+		rm -rf arch/arm/boot/"$kerneltype"
+		mkdir -p ozip/system/lib/modules
+		rm -rf out
+		mkdir out
+		echo
+		echo "Done"
+		break
+		;;
+	n|N )
+		break
+		;;
+	* )
+		echo
+		echo "Invalid try again!"
+		echo
+		;;
+esac
+done
+
+echo
+
+while read -p "Do you want to make defconfig (y/n)? " cchoice
+do
+case "$cchoice" in
+	y|Y )
+		make $defconfig
+		echo
+		echo "Done"
+		break
+		;;
+	n|N )
+		break
+		;;
+	* )
+		echo
+		echo "Invalid try again!"
+		echo
+		;;
+esac
+done
+
+echo
+
+DATE_START=$(date +"%s")
+
+while read -p "Do you want to build (y/n)? " cchoice
+do
+echo
+case "$cchoice" in
+	y|Y )
+		make -j$jobs
+		echo
+		echo "Done"
+		cp arch/arm/boot/"$kerneltype" out
+		break
+		;;
+	n|N )
+		break
+		;;
+	* )
+		echo
+		echo "Invalid try again!"
+		echo
+		;;
+esac
+done
+
+
+if [ -f out/"$kerneltype" ]; then
+	echo "Making dt.img..."
+	echo
+	./dtbToolCM -2 -o out/dt.img -s 2048 -p scripts/dtc/ arch/arm/boot/
+	./dtbToolCM -2 -o ../out/falcon/files/dtb -s 2048 -p scripts/dtc/ arch/arm/boot/
+	cp out/dt.img ../out/falcon/files
+	cp out/"$kerneltype" ../out/falcon/files
+	echo "dt.img created and files copied..."
+else
+	echo "No build found..."
+	exit 0;
+fi
+
+echo
+
+if [ -f out/"$kerneltype" ]; then
+	echo "Making boot.img..."
+	echo
+	./mkbootimg --kernel out/"$kerneltype" --ramdisk resources/initramfs.img --cmdline "$cmdline" --base $base --pagesize $ps --ramdisk_offset $ramdisk_offset --tags_offset $tags_offset --dt out/dt.img --output ozip/boot.img
+	cp ozip/boot.img ../out/falcon/files
+else
+	echo "No $kerneltype found..."
+	exit 0;
+fi
+
+if [ -f arch/arm/boot/"$kerneltype" ]; then
+	rm -rf ozip/system
+	mkdir -p ozip/system/lib/modules
+	mkdir out/modules
+	find . -name "*.ko" -exec cp {} ozip/system/lib/modules \;
+	mkdir ozip/system/lib/modules/pronto
+	mv ozip/system/lib/modules/wlan.ko ozip/system/lib/modules/pronto/pronto_wlan.ko
+	cd ozip
+	zip -r ../$buildname.zip .
+	mv ../$buildname.zip ../$output
+	cd ..
+	rm -rf out ozip/system
+	echo "Done..."
+	rm -rf ozip/boot.img
+else
+	echo "Can't finish off zip..."
+	exit 0;
+fi
+
+DATE_END=$(date +"%s")
+DIFF=$(($DATE_END - $DATE_START))
+echo "Time: $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
+
