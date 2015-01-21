@@ -1,26 +1,44 @@
 #!/bin/bash
-echo '             _____   _       ___             '
-echo '            |__ __| | |___  | _ |            '
-echo '              | |   |  _  | | __|            '
-echo '              |_|   |_| |_| |___|            '
-echo '         ____                                '
-echo '        |  __|   ____  ___  ___  ____        '
-echo '        |  | __ | ___|| _ || _ || __ |       '
-echo '        |  |_| || |   | __|| __|| || |       '
-echo '        |______||_|   |___||___||_||_|       '
-echo '  ________                                    '
-echo ' |        | ______  ____  _      _  ____  ___ '
-echo ' |  |  |  ||  _   ||  __|| |___ | || __ || __|'
-echo ' |  |  |  || |_|  || |__ |  _  || || || || __|'
-echo ' |__|__|__||____|_||____||_| |_||_||_||_||___|'
+echo '        Compile Script by JosFer        '
+
+# Let's start
+export ARCH=arm
+export SUBARCH=arm
+
 echo
-echo '        Compile Script by YoshiShaPow        '
+echo "Which toolchain would you like to use?"
+
+while read -p "sabermod4.7, sabermod4.8, linaro4.9, linaro4.9-15 ?: " cchoice
+do
+case "$cchoice" in
+	sabermod4.7 )
+		toolchain="sabermod4.7"
+		export CROSS_COMPILE=/home/josfer/dev-kernels/toolchains/sabermod-arm-eabi-4.7/bin/arm-eabi-
+		break
+		;;
+	sabermod4.8 )
+		toolchain="sabermod4.8"
+		export CROSS_COMPILE=/home/josfer/dev-kernels/toolchains/sabermod-arm-eabi-4.8/bin/arm-eabi-
+		break
+		;;
+	linaro4.9 )
+		toolchain="linaro4.9"
+		export CROSS_COMPILE=/home/josfer/dev-kernels/toolchains/linaro-arm-eabi-4.9/bin/arm-eabi-
+		break
+		;;
+    linaro4.9-15 )
+		toolchain="linaro4.9-15"
+		export CROSS_COMPILE=/home/josfer/dev-kernels/toolchains/arm-cortex_a7-linux-gnueabihf-linaro_4.9/bin/arm-eabi-
+		break
+		;;
+esac
+done
 
 # Tuneables
-buildname="TGM-falcon-lollipop-v1.0.0"
-defconfig="tgm_falcon_defconfig"
-jobs="6"
-toolchain="/home/yoshishapow/kernels/toolchains/cortex_a15/bin/arm-cortex_a15-linux-gnueabihf-"
+version="v1.0.0"
+buildname="cm-12.0-falcon-lollipop-$toolchain-$version"
+defconfig="falcon_defconfig"
+jobs="5"
 kerneltype="zImage"
 output="../out/falcon"
 ps=2048
@@ -29,11 +47,6 @@ ramdisk_offset=0x01000000
 tags_offset=0x00000100
 cmdline="console=ttyHSL0,115200,n8 androidboot.console=ttyHSL0 androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x37 vmalloc=400M utags.blkdev=/dev/block/platform/msm_sdcc.1/by-name/utags androidboot.write_protect=0 zcache androidboot.selinux=permissive"
 
-# Let's startoneplus-one
-export ARCH=arm
-export SUBARCH=arm
-export CROSS_COMPILE=$toolchain
-
 echo
 
 while read -p "Do you want to make clean (y/n)? " cchoice
@@ -41,7 +54,7 @@ do
 case "$cchoice" in
 	y|Y )
 		make clean && make mrproper
-		rm -rf ../out/falcon/files && mkdir ../out/falcon/files
+		rm -rf ../out/falcon/files && mkdir -p ../out/falcon/files
 		rm -rf ozip/boot.img
 		rm -rf arch/arm/boot/"$kerneltype"
 		mkdir -p ozip/system/lib/modules
@@ -83,6 +96,8 @@ case "$cchoice" in
 		;;
 esac
 done
+
+CONFIG_LOCALVERSION="cm-12.0-falcon-lollipop-$toolchain-$version"
 
 echo
 
@@ -138,11 +153,6 @@ fi
 
 if [ -f arch/arm/boot/"$kerneltype" ]; then
 	rm -rf ozip/system
-	mkdir -p ozip/system/lib/modules
-	mkdir out/modules
-	find . -name "*.ko" -exec cp {} ozip/system/lib/modules \;
-	mkdir ozip/system/lib/modules/pronto
-	mv ozip/system/lib/modules/wlan.ko ozip/system/lib/modules/pronto/pronto_wlan.ko
 	cd ozip
 	zip -r ../$buildname.zip .
 	mv ../$buildname.zip ../$output
@@ -158,4 +168,3 @@ fi
 DATE_END=$(date +"%s")
 DIFF=$(($DATE_END - $DATE_START))
 echo "Time: $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
-
