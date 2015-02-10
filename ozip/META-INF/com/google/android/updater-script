@@ -1,10 +1,8 @@
-
-ui_print("                                  ");
-ui_print("          Custom Kernel           ");
-ui_print("                                  ");
-ui_print("            By JosFer             ");
-ui_print("                                  ");
-ui_print("    Installing...                 ");
+ui_print("  ThunderCats-Jaga_Edition-falcon-lp  ");
+ui_print("                                      ");
+ui_print("            By JosFer                 ");
+ui_print("                                      ");
+ui_print("          Installing...               ");
 package_extract_file("boot.img", "/dev/block/platform/msm_sdcc.1/by-name/boot");
 mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
 delete_recursive("/system/lib/modules");

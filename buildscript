@@ -36,7 +36,7 @@ done
 
 # Tuneables
 version="v1.0.0"
-buildname="cm-12.0-falcon-lollipop-$toolchain-$version"
+buildname="ThunderCats-Jaga_Edition-falcon-lp-$toolchain-$version"
 defconfig="falcon_defconfig"
 jobs="5"
 kerneltype="zImage"
@@ -97,7 +97,7 @@ case "$cchoice" in
 esac
 done
 
-CONFIG_LOCALVERSION="cm-12.0-falcon-lollipop-$toolchain-$version"
+CONFIG_LOCALVERSION="ThunderCats-Jaga_Edition-falcon-lp-$toolchain-$version"
 
 echo
 
